@@ -1,0 +1,23 @@
+---
+devices:
+  - name: "cln"
+    type: "netns"
+
+  - name: "srv"
+    type: "netns"
+
+  - name: "hclnvpp"
+    type: "veth"
+    peer:
+      name: "cln"
+      netns: "cln"
+      ip4:
+        network: 1
+
+  - name: "hsrvvpp"
+    type: "veth"
+    peer:
+      name: "srv"
+      netns: "srv"
+      ip4:
+        network: 2

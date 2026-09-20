@@ -1,0 +1,7 @@
+# Ignore VPP compiled binaries and build artifacts
+vpp-src/vpp/build-root/
+vpp-src/vpp/build/
+*.so
+*.so.*
+*.a
+*.o
