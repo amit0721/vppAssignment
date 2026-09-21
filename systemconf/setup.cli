@@ -1,0 +1,36 @@
+
+# Interfaces
+create tap id 0 host-if-name tap-client-vpp host-ns client-ns
+set interface state tap0 up
+set interface ip address tap0 10.10.0.1/24
+
+create host-interface name vpp-underlay
+set interface state host-vpp-underlay up
+set interface ip address host-vpp-underlay 192.168.50.1/24
+
+# Unprotected Tunnel
+create ipip tunnel src 192.168.50.1 dst 192.168.50.2
+set interface state ipip0 up
+set interface unnumbered ipip0 use host-vpp-underlay
+ip route add 10.20.0.0/24 via ipip0
+
+# IKEv2 Profile + Dynamic Binding
+ikev2 profile add nodeb
+ikev2 profile set nodeb auth shared-key-mic string secret123
+ikev2 profile set nodeb id local ip4-addr 192.168.50.1
+ikev2 profile set nodeb id remote ip4-addr 192.168.50.2
+ikev2 profile set nodeb traffic-selector local ip-range 10.10.0.0 - 10.10.0.255 port-range 0 - 65535 protocol 0
+ikev2 profile set nodeb traffic-selector remote ip-range 10.20.0.0 - 10.20.0.255 port-range 0 - 65535 protocol 0
+
+ikev2 profile set nodeb responder host-vpp-underlay 192.168.50.2
+
+# THE AUTOMATIC DYNAMIC BINDING LINE:
+ikev2 profile set nodeb tunnel ipip0
+
+# Algorithms
+ikev2 profile set nodeb ike-crypto-alg aes-cbc 256 ike-integ-alg hmac-sha2-256-128 ike-dh modp-2048
+ikev2 profile set nodeb esp-crypto-alg aes-cbc 256 esp-integ-alg hmac-sha2-256-128
+ikev2 profile set nodeb sa-lifetime 3600 0 10 0
+#ikev2 profile set nodeb sa-lifetime 3600 7200 10 0
+#ikev2 profile set nodeb lifetime 3600 jitter 10 max-lifetime 60
+ikev2 dpd disable
