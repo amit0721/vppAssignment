@@ -30,7 +30,9 @@ ikev2 profile set nodeb tunnel ipip0
 # Algorithms
 ikev2 profile set nodeb ike-crypto-alg aes-cbc 256 ike-integ-alg hmac-sha2-256-128 ike-dh modp-2048
 ikev2 profile set nodeb esp-crypto-alg aes-cbc 256 esp-integ-alg hmac-sha2-256-128
-ikev2 profile set nodeb sa-lifetime 3600 0 10 0
+ikev2 profile set nodeb sa-lifetime 3600 10 60 0
 #ikev2 profile set nodeb sa-lifetime 3600 7200 10 0
 #ikev2 profile set nodeb lifetime 3600 jitter 10 max-lifetime 60
 ikev2 dpd disable
+#kept just for testing it is reduindent if dpd disabled already.
+ikev2 set liveness 3600 5
