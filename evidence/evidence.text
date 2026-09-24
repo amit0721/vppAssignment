@@ -1,0 +1,240 @@
+Command output on working setup:
+
+vboxuser@vppAssignement:~/vppAssignment$ vim setup.sh 
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show interface addr
+  
+host-vpp-underlay (up):
+  L3 192.168.50.1/24
+ipip0 (up): 
+  unnumbered, use host-vpp-underlay
+  L3 192.168.50.1/24
+local0 (up):
+tap0 (up):
+  L3 10.10.0.1/24
+vboxuser@vppAssignement:~/vppAssignment$ 
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show ip fib 10.20.0.0/24
+ipv4-VRF:0, fib_index:0, flow hash:[src dst sport dport proto flowlabel ] epoch:0 flags:none locks:[adjacency:1, default-route:1, ]
+10.20.0.0/24 fib:0 index:15 locks:2
+  CLI refs:1 entry-flags:attached, src-flags:added,contributing,active,
+    path-list:[20] locks:2 flags:shared, uPRF-list:20 len:1 itfs:[3, ]
+      path:[24] pl-index:20 ip4 weight=1 pref=0 attached:  oper-flags:resolved, cfg-flags:glean,
+         ipip0
+
+ forwarding:   unicast-ip4-chain
+  [@0]: dpo-load-balance: [proto:ip4 index:18 buckets:1 uRPF:20 to:[4:336]]
+    [0] [@6]: ipv4 via 0.0.0.0 ipip0: mtu:9000 next:5 flags:[fixup-ip4o4 ] 4500000000000000400495a6c0a83201c0a83202
+        stacked-on entry:16:
+          [@3]: ipv4 via 192.168.50.2 host-vpp-underlay: mtu:9000 next:4 flags:[] b2d5ed5dc31502fe962cac100800
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show ikev2 profile
+profile nodeb
+  auth-method shared-key-mic auth data secret123
+  local id-type ip4-addr data 192.168.50.1
+  remote id-type ip4-addr data 192.168.50.2
+  local traffic-selector addr 10.10.0.0 - 10.10.0.255 port 0 - 65535 protocol 0
+  remote traffic-selector addr 10.20.0.0 - 10.20.0.255 port 0 - 65535 protocol 0
+  protected tunnel ipip0
+  responder host-vpp-underlay 192.168.50.2 
+  ike-crypto-alg aes-cbc 256 ike-integ-alg hmac-sha2-256-128 ike-dh modp-2048
+  esp-crypto-alg aes-cbc 256 esp-integ-alg hmac-sha2-256-128
+  lifetime 3600 jitter 10 handover 60 maxdata 0
+
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show ikev2 sa
+iip 192.168.50.2 ispi c021c4bc32de9d15 rip 192.168.50.1 rspi c6766a59c41cb496
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show ipsec sa
+[0] sa 3254779904 (0xc2000000) spi 2454920123 (0x92531bbb) protocol:esp flags:[anti-replay inbound ]
+[1] sa 2181038080 (0x82000000) spi 3319224420 (0xc5d75864) protocol:esp flags:[anti-replay ]
+[2] sa 3254781952 (0xc2000800) spi 741114007 (0x2c2c8097) protocol:esp flags:[anti-replay inbound ]
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show acl-plugin acl
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show error
+   Count                  Node                              Reason               Severity 
+        12             null-node                      blackholed packets           error  
+         1             arp-reply                       ARP replies sent            info   
+         1             arp-reply             ARP request IP4 source address lear   info   
+         4          esp4-encrypt-tun                  ESP pkts received            info   
+        39           ikev2-ip4-natt                   packets processed            info   
+        16           ikev2-ip4-natt            IKE keepalive messages received     info   
+        20           ikev2-ip4-natt              IKE rekey requests received       info   
+         2           ikev2-ip4-natt             IKE AUTH SA requests received      info   
+         2             ikev2-ip4                      packets processed            info   
+         2             ikev2-ip4              IKE EXCHANGE SA requests received    info   
+         4             igmp-input             IGMP not enabled on this interface   error  
+        56          af-packet-input                    timed out block             error  
+        56          af-packet-input                  total received block          error  
+         6             arp-reply                       ARP replies sent            info   
+         1             arp-reply             ARP request IP4 source address lear   info   
+         4          esp4-decrypt-tun                  ESP pkts received            info   
+         4          ipsec4-tun-input                good packets received          info   
+        39          ipsec4-tun-input                  no matching tunnel           error  
+         1             ip4-glean                      ARP requests sent            info   
+        39           punt-dispatch                        dispatched               error  
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show runtime
+Thread 0 vpp_main (lcore 0)
+Time 381.8, 10 sec internal node vector rate 0.00 loops/sec 184587.49
+  vector rates in 0.0000e0, out 2.6190e-3, drop 0.0000e0, punt 0.0000e0
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call  
+acl-plugin-fa-cleaner-process  event wait                0               0               1          1.69e4            0.00
+api-rx-from-ring                any wait                 0               0              43          6.46e8            0.00
+avf-process                    event wait                0               0               1          1.64e4            0.00
+bfd-process                    event wait                0               0               1          1.44e4            0.00
+bond-process                   event wait                0               0               1          1.16e4            0.00
+cnat-scanner-process           event wait                0               0               1          1.51e4            0.00
+dev-config                        done                   1               0               0          1.14e4            0.00
+dhcp-client-process             any wait                 0               0               1          8.07e3            0.00
+dhcp6-client-cp-process         any wait                 0               0               1          9.07e3            0.00
+dhcp6-pd-client-cp-process      any wait                 0               0               1          8.78e3            0.00
+dhcp6-pd-reply-publisher-proce event wait                0               0               1          1.15e4            0.00
+dhcp6-reply-publisher-process  event wait                0               0               1          5.72e3            0.00
+fib-walk                        any wait                 0               0             188          2.56e4            0.00
+flow-report-process             any wait                 0               0               1          1.35e4            0.00
+flowprobe-timer-process         any wait                 0               0               1          1.54e4            0.00
+host-vpp-underlay-output         active                  1               1               0          3.11e4            1.00
+host-vpp-underlay-tx             active                  1               1               0          1.03e6            1.00
+igmp-timer-process             event wait                0               0               1          1.45e4            0.00
+ikev2-manager-process           any wait                 0               0             183          9.06e7            0.00
+ioam-export-process             any wait                 0               0               1          8.21e3            0.00
+ip-neighbor-event              event wait                0               0               1          9.40e3            0.00
+ip4-full-reassembly-expire-wal  any wait                 0               0            6618          4.44e4            0.00
+ip4-neighbor-age-process       event wait                0               0               1          6.08e3            0.00
+ip4-sv-reassembly-expire-walk   any wait                 0               0              38          1.89e4            0.00
+ip6-full-reassembly-expire-wal  any wait                 0               0            6618          4.22e4            0.00
+ip6-mld-process                 any wait                 0               0             363          1.76e4            0.00
+ip6-neighbor-age-process       event wait                0               0               1          9.85e3            0.00
+ip6-ra-process                  any wait                 0               0             363          2.25e4            0.00
+ip6-rs-process                  any wait                 0               0               1          8.54e3            0.00
+ip6-sv-reassembly-expire-walk   any wait                 0               0              38          2.48e4            0.00
+l2-arp-term-publisher          event wait                0               0               1          6.20e4            0.00
+l2fib-mac-age-scanner-process  event wait                0               0               1          1.11e4            0.00
+lldp-process                   event wait                0               0               1          8.22e6            0.00
+memif-process                  event wait                0               0               1          1.85e4            0.00
+nat44-ei-ha-process            event wait                0               0               1          1.53e4            0.00
+nsh-md2-ioam-export-process     any wait                 0               0               1          1.72e4            0.00
+rd-cp-process                   any wait                 0               0               1          3.29e4            0.00
+send-dhcp6-client-message-proc  any wait                 0               0               1          1.55e4            0.00
+send-dhcp6-pd-client-message-p  any wait                 0               0               1          1.65e4            0.00
+startup-config-process            done                   1               0               1          2.59e4            0.00
+statseg-collector-process       time wait                0               0              38          1.08e7            0.00
+udp-ping-process                any wait                 0               0               1          3.31e4            0.00
+unix-cli-new-session            any wait                 0               0              43          1.69e4            0.00
+unix-cli-process-0               active                 11               0              25          3.69e8            0.00
+unix-epoll-input                 polling           3676056               0               0          2.88e5            0.00
+vhost-user-process              any wait                 0               0               1          2.18e4            0.00
+vhost-user-send-interrupt-proc  any wait                 0               0               1          6.96e3            0.00
+vpe-link-state-process         event wait                0               0               5          1.24e4            0.00
+vrrp-periodic-process          event wait                0               0               1          1.42e4            0.00
+vxlan-gpe-ioam-export-process   any wait                 0               0               1          9.85e3            0.00
+wg-timer-manager               event wait                0               0               1          4.31e6            0.00
+---------------
+Thread 1 vpp_wk_0 (lcore 1)
+Time 381.8, 10 sec internal node vector rate 0.00 loops/sec 1077524.73
+  vector rates in 4.7143e-2, out 1.3095e-2, drop 3.4048e-2, punt 0.0000e0
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call  
+adj-midchain-tx                  active                  4               4               0          1.09e4            1.00
+arp-input                        active                  2               2               0          1.18e5            1.00
+arp-reply                        active                  2               2               0          1.00e5            1.00
+drop                             active                 10              13               0          2.05e4            1.30
+error-drop                       active                 10              13               0          1.41e4            1.30
+esp4-encrypt-tun                 active                  4               4               0          2.06e5            1.00
+ethernet-input                   active                 15              18               0          3.86e4            1.20
+host-vpp-underlay-output         active                  4               4               0          1.55e4            1.00
+host-vpp-underlay-tx             active                  4               4               0          2.33e6            1.00
+interface-output                 active                  1               1               0          1.55e4            1.00
+ip4-input                        active                  4               4               0          1.64e4            1.00
+ip4-lookup                       active                  4               4               0          1.31e5            1.00
+ip4-midchain                     active                  4               4               0          1.34e5            1.00
+ip4-rewrite                      active                  4               4               0          7.29e3            1.00
+ip6-input                        active                  9              12               0          1.55e4            1.33
+ip6-not-enabled                  active                  9              12               0          7.31e3            1.33
+tap0-output                      active                  1               1               0          1.07e4            1.00
+tap0-tx                          active                  1               1               0          3.37e6            1.00
+unix-epoll-input                 polling            465421               0               0          8.23e4            0.00
+virtio-input                     polling         474588771              18               0         4.13e10            0.00
+---------------
+Thread 2 vpp_wk_1 (lcore 2)
+Time 381.8, 10 sec internal node vector rate 1.00 loops/sec 670822.45
+  vector rates in 1.7024e-1, out 1.5714e-1, drop 1.5714e-2, punt 0.0000e0
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call  
+af-packet-input               interrupt wa              65              65               0          1.18e5            1.00
+arp-input                        active                  8               8               0          1.37e4            1.00
+arp-reply                        active                  8               8               0          1.51e5            1.00
+drop                             active                  6               6               0          2.09e4            1.00
+error-drop                       active                  6               6               0          2.83e4            1.00
+esp4-decrypt-tun                 active                  4               4               0          8.19e4            1.00
+ethernet-input                   active                 65              65               0          4.43e4            1.00
+host-vpp-underlay-output         active                 56              56               0          3.13e4            1.00
+host-vpp-underlay-tx             active                 56              56               0          2.01e6            1.00
+igmp-input                       active                  4               4               0          2.35e4            1.00
+ikev2-ip4                        active                  2               2               0          3.06e6            1.00
+ikev2-ip4-natt                   active                 47              47               0          6.12e5            1.00
+interface-output                 active                  7               7               0          1.63e4            1.00
+ip4-drop                         active                  1               1               0          3.06e4            1.00
+ip4-glean                        active                  1               1               0          3.76e4            1.00
+ip4-input                        active                 57              57               0          3.56e4            1.00
+ip4-input-no-checksum            active                  4               4               0          4.52e3            1.00
+ip4-local                        active                  4               4               0          2.85e4            1.00
+ip4-lookup                       active                106             106               0          2.20e4            1.00
+ip4-options                      active                  4               4               0          1.26e4            1.00
+ip4-receive                      active                 53              53               0          8.93e4            1.00
+ip4-rewrite                      active                 52              52               0          1.04e4            1.00
+ip4-udp-lookup                   active                 49              49               0          1.34e4            1.00
+ipsec4-tun-input                 active                 51              51               0          1.49e4            1.00
+punt-dispatch                    active                 47              47               0          1.74e4            1.00
+tap0-output                      active                  4               4               0          1.20e4            1.00
+tap0-tx                          active                  4               4               0          4.99e5            1.00
+unix-epoll-input                 polling             88969               0               0          1.16e7            0.00
+---------------
+Thread 3 vpp_wk_2 (lcore 3)
+Time 381.8, 10 sec internal node vector rate 0.00 loops/sec 250448.89
+  vector rates in 0.0000e0, out 0.0000e0, drop 0.0000e0, punt 0.0000e0
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call  
+unix-epoll-input                 polling             89264               0               0          1.11e7            0.00
+---------------
+Thread 4 vpp_wk_3 (lcore 4)
+Time 381.8, 10 sec internal node vector rate 0.00 loops/sec 926834.69
+  vector rates in 0.0000e0, out 0.0000e0, drop 0.0000e0, punt 0.0000e0
+             Name                 State         Calls          Vectors        Suspends         Clocks       Vectors/Call  
+unix-epoll-input                 polling             90551               0               0          1.09e7            0.00
+vboxuser@vppAssignement:~/vppAssignment$ 
+
+ vboxuser@vppAssignement:~/vppAssignment$ sudo ip netns exec node-b-ns swanctl --list-sas
+sudo ip netns exec node-b-ns swanctl --list-sas
+vpp-nodeb: #2, ESTABLISHED, IKEv2, c021c4bc32de9d15_i* c6766a59c41cb496_r
+  local  '192.168.50.2' @ 192.168.50.2[4500]
+  remote '192.168.50.1' @ 192.168.50.1[4500]
+  AES_CBC-256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/MODP_2048
+  established 1079s ago, rekeying in 12450s
+  vpp-child: #81, reqid 1, INSTALLED, TUNNEL, ESP:AES_CBC-256/HMAC_SHA2_256_128
+    installed 11s ago, rekeying in -3s, expires in 79s
+    in  cd52c3e7,      0 bytes,     0 packets
+    out f0f7046a,      0 bytes,     0 packets
+    local  10.20.0.0/24
+    remote 10.10.0.0/24
+vpp-nodeb: #2, ESTABLISHED, IKEv2, c021c4bc32de9d15_i* c6766a59c41cb496_r
+  local  '192.168.50.2' @ 192.168.50.2[4500]
+  remote '192.168.50.1' @ 192.168.50.1[4500]
+  AES_CBC-256/HMAC_SHA2_256_128/PRF_HMAC_SHA2_256/MODP_2048
+  established 1079s ago, rekeying in 12450s
+  vpp-child: #81, reqid 1, INSTALLED, TUNNEL, ESP:AES_CBC-256/HMAC_SHA2_256_128
+    installed 11s ago, rekeying in -3s, expires in 79s
+    in  cd52c3e7,      0 bytes,     0 packets
+    out f0f7046a,      0 bytes,     0 packets
+    local  10.20.0.0/24
+    remote 10.10.0.0/24
+	
+esp spi matches on both ipsec tunnel and node-b xfrm state.
+vboxuser@vppAssignement:~/vppAssignment$ sudo "$VPPCTL_BIN" -s /run/vpp/cli.sock show ipsec sa
+[1] sa 2181038080 (0x82000000) spi 3436881775 (0xccdaa76f) protocol:esp flags:[anti-replay ]
+[2] sa 3254781952 (0xc2000800) spi 844026812 (0x324ed3bc) protocol:esp flags:[anti-replay inbound ]
+vboxuser@vppAssignement:~/vppAssignment$ sudo ip netns exec node-b-ns ip xfrm state 
+src 192.168.50.2 dst 192.168.50.1
+	proto esp spi 0x324ed3bc reqid 1 mode tunnel
+	replay-window 0 flag af-unspec
+	auth-trunc hmac(sha256) 0xc80ebbcbb4c11e26325131c5c27fd7f9f9c85dd40305162acaabbd94bda354ab 128
+	enc cbc(aes) 0xf6e1f13d9f779669647341c811a08eb368400e6aa4ca00d2494f80d9e11fd332
+	anti-replay context: seq 0x0, oseq 0x0, bitmap 0x00000000
+src 192.168.50.1 dst 192.168.50.2
+	proto esp spi 0xccdaa76f reqid 1 mode tunnel
+	replay-window 32 flag af-unspec
+	auth-trunc hmac(sha256) 0x4b88416be337e3f659616c781df64ce005b6e1a1199bc9bae5c2220c9eca4525 128
+	enc cbc(aes) 0xbe594bf16f9ccdaf054b0cbae3edb10144cbd9c0f9f4de5efb3f6f67b84747c4
+	anti-replay context: seq 0x0, oseq 0x0, bitmap 0x00000000
+
